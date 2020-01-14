@@ -10,7 +10,9 @@ export default class App extends React.Component {
             cost: 0,
             potr: 0,
             dateNow: '',
-            dateTestimony: ''
+            dateTestimony: '',
+            dateTestimonyStamp: '',
+            dateNowStamp: ''
         }
         this.setStorage = this.setStorage.bind(this);
         this._storeData = this._storeData.bind(this);
@@ -21,6 +23,7 @@ export default class App extends React.Component {
     UNSAFE_componentWillMount() {
         let now = new Date();
         let dateNow = now.toLocaleDateString();
+
         this.setState({dateNow});
         this._retrieveData();
     }
@@ -29,6 +32,7 @@ export default class App extends React.Component {
       try {
         await AsyncStorage.setItem('oldTestimony', oldTestimony);
         await AsyncStorage.setItem('date', dateNow);
+        await AsyncStorage.setItem('dateTestimonyStamp', Date.now());
         this.setState({oldTestimony})
       } catch (error) {
         console.log(error);
