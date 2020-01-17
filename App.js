@@ -12,7 +12,14 @@ export default class App extends React.Component {
             dateNow: '',
             dateTestimony: '',
             dateTestimonyStamp: '',
-            dateNowStamp: ''
+            dateNowStamp: '',
+            days: 0,
+            hours: 0,
+            mins: 0,
+            secs: 0,
+            oldConsumption: 0,
+            consumption: 0,
+            consumptionRub: 0
         }
         this.setStorage = this.setStorage.bind(this);
         this._storeData = this._storeData.bind(this);
@@ -28,11 +35,13 @@ export default class App extends React.Component {
         this._retrieveData();
     }
 
-    _storeData = async (oldTestimony, dateNow) => {
+    _storeData = async (oldTestimony, dateNow, consumption, consumptionRub) => {
       try {
         await AsyncStorage.setItem('oldTestimony', oldTestimony);
         await AsyncStorage.setItem('date', dateNow);
         await AsyncStorage.setItem('dateTestimonyStamp', Date.now());
+        await AsyncStorage.setItem('consumption', consumption);
+        await AsyncStorage.setItem('consumptionRub', consumptionRub);
         this.setState({oldTestimony})
       } catch (error) {
         console.log(error);
@@ -43,11 +52,15 @@ export default class App extends React.Component {
       try {
         const value = await AsyncStorage.getItem('oldTestimony');
         const dateTestimony = await AsyncStorage.getItem('date');
+        const dateTestimonyStamp = await AsyncStorage.getItem('dateTestimonyStamp');
+        const oldConsumption = await AsyncStorage.getItem('consumption');
+        let timePassed = Date.now() - dateTestimonyStamp;
+        console.log('timePassed ', timePassed);
         console.log('dateTestimony ', dateTestimony);
         if (value !== null) {
           // We have data!!
           console.log('value ', value);
-          this.setState({oldTestimony: value, dateTestimony })
+          this.setState({oldTestimony: value, dateTestimony, dateTestimonyStamp, oldConsumption })
         }
       } catch (error) {
         console.log('Ашыпка получения ', error);
@@ -56,11 +69,23 @@ export default class App extends React.Component {
 
     _changeInput(text) {
         let cost = (parseFloat(text) - 101) * 5.5;
+        let dateNowStamp = Date.now();
 
-        this.setState({curTestimony: text, cost})
+
+        this.setState({curTestimony: text, cost, dateNowStamp})
+
+        let timePassed = (dateNowStamp - this.state.dateTestimonyStamp) / 1000;
+        let days = Math.floor(timePassed / 3600 / 24);
+        let hours = Math.floor(timePassed / 3600) - days * 24;
+        let mins = Math.floor(timePassed / 60) - days * 24 * 60 - hours * 60;
+        let secs = Math.floor(timePassed % 60);
+
+        let fullMins = timePassed / 60;
 
         let potr = (parseFloat(text) - this.state.oldTestimony) * 5.5;
-        this.setState({potr})
+        let consumption = (potr / fullMins).toFixed(2);
+        let consumptionRub = (consumption * 5.5).toFixed(2);
+        this.setState({potr, days, hours, mins, secs, consumption, consumptionRub})
     }
 
     setStorage(oldTestimony) {
@@ -68,7 +93,7 @@ export default class App extends React.Component {
     }
 
     render() {
-        const { oldTestimony, curTestimony, dateNow, cost, potr, dateTestimony } = this.state;
+        const { oldTestimony, curTestimony, dateNow, cost, potr, dateTestimony, days, hours, mins, consumption, consumptionRub, oldConsumption } = this.state;
         return (
           <View style={styles.container}>
             <TextInput
@@ -80,7 +105,7 @@ export default class App extends React.Component {
 
             <TouchableOpacity
               style={styles.button}
-              onPress = {(e) => {this._storeData(curTestimony, dateNow)}}
+              onPress = {(e) => {this._storeData(curTestimony, dateNow, consumption, consumptionRub)}}
             >
               <Text style={styles.btnText}> ЗАНЕСТИ ПОКАЗАНИЯ </Text>
             </TouchableOpacity>
@@ -89,6 +114,18 @@ export default class App extends React.Component {
 
             <Text style={styles.cost}>Нагорело: {potr}</Text>
 
+            <View style={{flex: 1, flexDirection: 'column', justifyContent: 'space-between', width:'100%'}}>
+                <View style={{flex: 1, flexDirection: 'column', justifyContent: 'center', width:'100%'}}>
+                    <Text style={styles.timePassed}>Дней: {days}</Text>
+                    <Text style={styles.timePassed}>Часов: {hours}</Text>
+                    <Text style={styles.timePassed}>Минут: {mins}</Text>
+                </View>
+                <View>
+                    <Text style={styles.timePassed}>Расход газа: {consumption} m3 в мин, {(consumption*60).toFixed()} в час, {(consumption*60*24).toFixed()} в день</Text>
+                    <Text style={styles.timePassed}>Расход руб: {consumptionRub} в мин, {(consumptionRub*60).toFixed()} в час, {(consumptionRub*60*24).toFixed()} в день</Text>
+                    <Text style={styles.timePassed}>Прошлый расход: {oldConsumption} m3 в час</Text>
+                </View>
+            </View>
           </View>
         );
     }
@@ -128,5 +165,9 @@ const styles = StyleSheet.create({
   cost: {
       width: 'auto',
       fontSize: 44,
+  },
+  timePassed: {
+      fontSize: 20,
+      alignItems: 'center'
   }
 });
