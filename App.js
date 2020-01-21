@@ -19,7 +19,8 @@ export default class App extends React.Component {
             secs: 0,
             oldConsumption: 0,
             consumption: 0,
-            consumptionRub: 0
+            consumptionRub: 0,
+            timePassed: 0
         }
         this.setStorage = this.setStorage.bind(this);
         this._storeData = this._storeData.bind(this);
@@ -54,13 +55,15 @@ export default class App extends React.Component {
         const dateTestimony = await AsyncStorage.getItem('date');
         const dateTestimonyStamp = await AsyncStorage.getItem('dateTestimonyStamp');
         const oldConsumption = await AsyncStorage.getItem('consumption');
-        let timePassed = Date.now() - dateTestimonyStamp;
+        let timePassed = (Date.now() - dateTestimonyStamp) / 1000;
+        console.log('now ', Date.now());
+        console.log('dateTestimonyStamp ', dateTestimonyStamp);
         console.log('timePassed ', timePassed);
         console.log('dateTestimony ', dateTestimony);
         if (value !== null) {
           // We have data!!
           console.log('value ', value);
-          this.setState({oldTestimony: value, dateTestimony, dateTestimonyStamp, oldConsumption })
+          this.setState({oldTestimony: value, dateTestimony, dateTestimonyStamp, oldConsumption, timePassed })
         }
       } catch (error) {
         console.log('Ашыпка получения ', error);
@@ -71,10 +74,12 @@ export default class App extends React.Component {
         let cost = (parseFloat(text) - 101) * 5.5;
         let dateNowStamp = Date.now();
 
+        let { timePassed } = this.state;
+
 
         this.setState({curTestimony: text, cost, dateNowStamp})
 
-        let timePassed = (dateNowStamp - this.state.dateTestimonyStamp) / 1000;
+        // let timePassed = (dateNowStamp - this.state.dateTestimonyStamp) / 1000;
         let days = Math.floor(timePassed / 3600 / 24);
         let hours = Math.floor(timePassed / 3600) - days * 24;
         let mins = Math.floor(timePassed / 60) - days * 24 * 60 - hours * 60;
